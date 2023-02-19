@@ -1,5 +1,7 @@
 variable "subscribers" {
   type = map(object({
+    confirmation_timeout_in_minutes = number
+    # Integer indicating number of minutes to wait in retrying mode for fetching subscription arn before marking it as failure. Only applicable for http and https protocols. Default is 1
     protocol = string
     # The protocol to use. The possible values for this are: sqs, sms, lambda, application. (http or https are partially supported, see below) (email is an option but is unsupported, see below).
     endpoint = string
@@ -29,6 +31,79 @@ variable "encryption_enabled" {
   type        = bool
   description = "Whether or not to use encryption for SNS Topic. If set to `true` and no custom value for KMS key (kms_master_key_id) is provided, it uses the default `alias/aws/sns` KMS key."
   default     = true
+}
+
+variable "override_sns_topic_name" {
+  type        = string
+  description = "Override normal SNS Topic name set by this module, useful for importing existing SNS Topics"
+  default     = null
+}
+
+variable "firehose_failure_feedback_role_arn" {
+  type        = string
+  description = "The IAM role permitted to receive failure feedback for this topic"
+  default     = null
+}
+
+variable "firehose_success_feedback_role_arn" {
+  type        = string
+  description = "The IAM role permitted to receive success feedback for this topic"
+  default     = null
+}
+
+variable "firehose_success_feedback_sample_rate" {
+  type        = number
+  description = "Percentage of success to sample"
+  default     = 0
+}
+
+variable "http_success_feedback_role_arn" {
+  type        = string
+  description = "The IAM role permitted to receive success feedback for this topic"
+  default     = null
+}
+
+variable "http_success_feedback_sample_rate" {
+  type        = number
+  description = "Percentage of success to sample"
+  default     = 0
+}
+
+variable "http_failure_feedback_role_arn" {
+  type        = string
+  description = "IAM role for failure feedback"
+  default     = null
+}
+
+
+variable "lambda_success_feedback_role_arn" {
+  type        = string
+  description = "The IAM role permitted to receive success feedback for this topic"
+  default     = null
+}
+
+variable "lambda_success_feedback_sample_rate" {
+  type        = number
+  description = "Percentage of success to sample"
+  default     = 0
+}
+
+variable "lambda_failure_feedback_role_arn" {
+  type        = string
+  description = "IAM role for failure feedback"
+  default     = null
+}
+
+variable "sqs_success_feedback_role_arn" {
+  type        = string
+  description = "The IAM role permitted to receive success feedback for this topic"
+  default     = null
+}
+
+variable "sqs_failure_feedback_role_arn" {
+  type        = string
+  description = "IAM role for failure feedback"
+  default     = null
 }
 
 variable "sqs_queue_kms_master_key_id" {
@@ -73,6 +148,12 @@ variable "sqs_dlq_message_retention_seconds" {
   type        = number
   description = "The number of seconds Amazon SQS retains a message. Integer representing seconds, from 60 (1 minute) to 1209600 (14 days)."
   default     = 1209600
+}
+
+variable "sqs_success_feedback_sample_rate" {
+  type        = number
+  description = "Percentage of success to sample."
+  default     = "0"
 }
 
 variable "delivery_policy" {

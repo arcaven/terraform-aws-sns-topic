@@ -14,12 +14,24 @@ locals {
 resource "aws_sns_topic" "this" {
   count = local.enabled ? 1 : 0
 
-  name                        = local.sns_topic_name
-  display_name                = replace(module.this.id, ".", "-") # dots are illegal in display names and for .fifo topics required as part of the name (AWS SNS by design)
-  kms_master_key_id           = local.kms_key_id
-  delivery_policy             = var.delivery_policy
-  fifo_topic                  = var.fifo_topic
-  content_based_deduplication = var.content_based_deduplication
+  name                                  = length(var.override_sns_topic_name) > 0 ? var.override_sns_topic_name : local.sns_topic_name
+  display_name                          = replace(module.this.id, ".", "-") # dots are illegal in display names and for .fifo topics required as part of the name (AWS SNS by design)
+  kms_master_key_id                     = local.kms_key_id
+  delivery_policy                       = var.delivery_policy
+  fifo_topic                            = var.fifo_topic
+  content_based_deduplication           = var.content_based_deduplication
+  firehose_failure_feedback_role_arn    = var.firehose_failure_feedback_role_arn
+  firehose_success_feedback_sample_rate = var.firehose_success_feedback_sample_rate
+  firehose_success_feedback_role_arn    = var.firehose_success_feedback_role_arn
+  http_success_feedback_role_arn        = var.http_success_feedback_role_arn
+  http_success_feedback_sample_rate     = var.http_success_feedback_sample_rate
+  http_failure_feedback_role_arn        = var.http_failure_feedback_role_arn
+  lambda_success_feedback_role_arn      = var.lambda_success_feedback_role_arn
+  lambda_success_feedback_sample_rate   = var.lambda_success_feedback_sample_rate
+  lambda_failure_feedback_role_arn      = var.lambda_failure_feedback_role_arn
+  sqs_success_feedback_sample_rate      = var.sqs_success_feedback_sample_rate
+  sqs_success_feedback_role_arn         = var.sqs_success_feedback_role_arn
+  sqs_failure_feedback_role_arn         = var.sqs_failure_feedback_role_arn
 
   tags = merge(module.this.tags, {
     Name = local.sns_topic_name
@@ -29,11 +41,12 @@ resource "aws_sns_topic" "this" {
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.enabled ? var.subscribers : {}
 
-  topic_arn              = join("", aws_sns_topic.this.*.arn)
-  protocol               = var.subscribers[each.key].protocol
-  endpoint               = var.subscribers[each.key].endpoint
-  endpoint_auto_confirms = var.subscribers[each.key].endpoint_auto_confirms
-  raw_message_delivery   = var.subscribers[each.key].raw_message_delivery
+  topic_arn                       = join("", aws_sns_topic.this.*.arn)
+  protocol                        = var.subscribers[each.key].protocol
+  endpoint                        = var.subscribers[each.key].endpoint
+  endpoint_auto_confirms          = var.subscribers[each.key].endpoint_auto_confirms
+  confirmation_timeout_in_minutes = var.subscribers[each.key].confirmation_timeout_in_minutes
+  raw_message_delivery            = var.subscribers[each.key].raw_message_delivery
   redrive_policy = var.sqs_dlq_enabled ? coalesce(var.redrive_policy, jsonencode({
     deadLetterTargetArn = join("", aws_sqs_queue.dead_letter_queue.*.arn)
     maxReceiveCount     = var.redrive_policy_max_receiver_count
